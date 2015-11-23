@@ -1,8 +1,7 @@
 from __future__ import unicode_literals
 import datetime
 from dateutil.parser import parse
-from decimal import Decimal
-import decimal
+from decimal import Decimal, InvalidOperation
 import re
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.utils import datetime_safe, importlib
@@ -268,7 +267,7 @@ class DecimalField(ApiField):
         if value and not isinstance(value, Decimal):
             try:
                 value = Decimal(value)
-            except decimal.InvalidOperation:
+            except InvalidOperation:
                 raise ApiFieldError("Invalid decimal string for '%s' field: '%s'" % (self.instance_name, value))
 
         return value
