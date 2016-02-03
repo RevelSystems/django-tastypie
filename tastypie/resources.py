@@ -31,7 +31,6 @@ from tastypie.throttle import BaseThrottle
 from tastypie.utils import is_valid_jsonp_callback_value, dict_strip_unicode_keys, trailing_slash
 from tastypie.utils.mime import determine_format, build_content_type
 from tastypie.validation import Validation
-from tastypie.compat import get_module_name, atomic_decorator
 
 # If ``csrf_exempt`` isn't present, stub it.
 try:
@@ -2210,7 +2209,7 @@ class BaseModelResource(Resource):
         self.authorized_delete_detail(self.get_object_list(bundle.request), bundle)
         bundle.obj.delete()
 
-    @atomic_decorator()
+    @transaction.commit_on_success()
     def patch_list(self, request, **kwargs):
         """
         An ORM-specific implementation of ``patch_list``.
@@ -2232,7 +2231,7 @@ class BaseModelResource(Resource):
                 bundle.obj.delete()
 
     def create_identifier(self, obj):
-        return u"%s.%s.%s" % (obj._meta.app_label, get_module_name(obj._meta), obj.pk)
+        return u"%s.%s.%s" % (obj._meta.app_label, obj._meta.module_name, obj.pk)
 
     def save(self, bundle, skip_errors=False):
         self.is_valid(bundle)
