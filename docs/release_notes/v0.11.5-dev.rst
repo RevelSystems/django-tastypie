@@ -1,0 +1,9 @@
+v0.11.5-dev
+===========
+
+:date: 2017-06-29
+
+Release that fixes single Django deprecation message:
+* tastypie/fields.py:7: RemovedInDjango19Warning: django.utils.importlib will be removed in Django 1.9.
+
+    from django.utils import datetime_safe, importlib
