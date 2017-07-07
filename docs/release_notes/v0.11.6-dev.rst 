@@ -1,0 +1,6 @@
+v0.11.5-dev
+===========
+
+:date: 2017-07-07
+
+Release with backporting this fix: https://github.com/django-tastypie/django-tastypie/issues/1114
