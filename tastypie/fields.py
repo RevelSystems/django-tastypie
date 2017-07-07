@@ -614,11 +614,11 @@ class RelatedField(ApiField):
         # We also need to check to see if updates are allowed on the FK resource.
         if unique_keys and fk_resource.can_update():
             try:
-                return fk_resource.obj_update(fk_bundle, skip_errors=True, **data)
+                return fk_resource.obj_update(fk_bundle, **data)
             except (NotFound, TypeError):
                 try:
                     # Attempt lookup by primary key
-                    return fk_resource.obj_update(fk_bundle, skip_errors=True, **unique_keys)
+                    return fk_resource.obj_update(fk_bundle, **unique_keys)
                 except NotFound:
                     pass
             except MultipleObjectsReturned:
