@@ -5,7 +5,7 @@ import logging
 import warnings
 
 from django.conf import settings
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned, ValidationError
 from django.core.urlresolvers import NoReverseMatch, reverse, resolve, Resolver404, get_script_prefix
 from django.core.signals import got_request_exception
@@ -336,10 +336,7 @@ class Resource(six.with_metaclass(DeclarativeMetaclass)):
             urls += overridden_urls
 
         urls += self.base_urls()
-        urlpatterns = patterns('',
-            *urls
-        )
-        return urlpatterns
+        return urls
 
     def determine_format(self, request):
         """
