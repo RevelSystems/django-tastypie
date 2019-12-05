@@ -1,0 +1,6 @@
+v0.11.9-dev
+===========
+
+:date: 2019-12-05
+
+Fixed import of deprecated ``django.conf.urls.patterns``
