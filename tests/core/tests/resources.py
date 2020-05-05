@@ -945,7 +945,7 @@ class UserResource(ModelResource):
     class Meta:
         queryset = User.objects.all()
         authorization = Authorization()
-
+        
     def get_resource_uri(self, bundle_or_obj=None, url_name='api_dispatch_list'):
         if bundle_or_obj is None:
             return '/api/v1/users/'
@@ -1516,6 +1516,9 @@ class ModelResourceTestCase(TestCase):
     def test_get_via_uri(self):
         resource = NoteResource(api_name='v1')
         note_1 = resource.get_via_uri('/api/v1/notes/1/')
+        self.assertEqual(note_1.pk, 1)
+        # Should work even if app name is the same as resource
+        note_1 = resource.get_via_uri('/notes/api/v1/notes/1/')
         self.assertEqual(note_1.pk, 1)
 
         try:
@@ -3755,7 +3758,7 @@ class ModelResourceTestCase(TestCase):
             # ``None`` to a required FK.
             hydrated1 = nmbr.full_hydrate(bundle_1)
             self.fail()
-        except Note.DoesNotExist:
+        except (Note.DoesNotExist, ValueError):
             pass
 
         # So we introduced ``blank=True``.
@@ -4221,4 +4224,3 @@ class ObjectlessResourceTestCase(TestCase):
         bundle = resource.build_bundle()
 
         self.assertTrue(bundle is not None)
-

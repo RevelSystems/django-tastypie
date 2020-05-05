@@ -716,6 +716,9 @@ class ToOneFieldTestCase(TestCase):
         field_2 = ToManyField(UserResource, lambda bundle: User.objects.filter(pk=1))
         self.assertEqual(field_2.dehydrate(bundle), ['/api/v1/users/1/'])
 
+        field_3 = ToOneField(UserResource, lambda bundle:None)
+        self.assertRaises(ApiFieldError, field_3.dehydrate, bundle)
+
     def test_dehydrate_full_detail_list(self):
         note = Note.objects.get(pk=1)
         request = MockRequest()
@@ -896,7 +899,8 @@ class ToOneFieldTestCase(TestCase):
 
     def test_traversed_attribute_dehydrate(self):
         user = User.objects.get(pk=1)
-        mediabit = MediaBit(note=Note(author=user))
+        note = Note.objects.create(author=user)
+        mediabit = MediaBit(note=note)
         bundle = Bundle(obj=mediabit)
 
         field_1 = ToOneField(UserResource, 'note__author')

@@ -1,0 +1,15 @@
+v0.12.3-dev
+===========
+
+:date: 2020-05-05
+
+Fork is upgraded to v0.12.2 from mainstream.
+
+Custom fixes, that are still included:
+ * Deepcopy performance issue fix: https://github.com/RevelSystems/django-tastypie/commit/ece89b244950608723207dd48837a1547dd45cd2
+ * Fix for invalid decimal strings: https://github.com/RevelSystems/django-tastypie/pull/1
+ * `importlib` import fix: https://github.com/RevelSystems/django-tastypie/pull/4
+ * Fix for `django.core.cache.get_cache` import: https://github.com/RevelSystems/django-tastypie/pull/5
+ * Copy of `django.utils.http.same_origin`: https://github.com/RevelSystems/django-tastypie/pull/6
+ * Port of fix for `skip_errors=True` in related fields: https://github.com/RevelSystems/django-tastypie/pull/8
+ * Fix usages of the deprecated `django.conf.urls.patterns`: https://github.com/RevelSystems/django-tastypie/pull/9 and https://github.com/RevelSystems/django-tastypie/pull/10

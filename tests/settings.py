@@ -7,6 +7,8 @@ ADMINS = (
     ('test@example.com', 'Mr. Test'),
 )
 
+SITE_ID = 1
+
 BASE_PATH = os.path.abspath(os.path.dirname(__file__))
 
 MEDIA_ROOT = os.path.normpath(os.path.join(BASE_PATH, 'media'))
@@ -60,3 +62,12 @@ TASTYPIE_FULL_DEBUG = False
 
 # to make sure timezones are handled correctly in Django>=1.4
 USE_TZ = True
+
+MIDDLEWARE_CLASSES = (
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+)

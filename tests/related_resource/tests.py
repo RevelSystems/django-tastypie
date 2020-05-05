@@ -1,12 +1,11 @@
-from datetime import datetime, tzinfo, timedelta
+from datetime import datetime
 import json
 
 import django
-from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.db.models.signals import pre_save
-from django.test import TestCase
+from django.test.testcases import TestCase
 
 from tastypie import fields
 from tastypie.exceptions import NotFound
@@ -17,10 +16,11 @@ from core.tests.resources import HttpRequest
 
 from related_resource.api.resources import CategoryResource, ForumResource, FreshNoteResource, JobResource, NoteResource, PersonResource, UserResource
 from related_resource.api.urls import api
-from related_resource.models import Category, Label, Tag, Taggable, TaggableTag, ExtraData, Company, Person, Dog, DogHouse, Bone, Product, Address, Job, Payment
+from related_resource.models import Category, Label, Tag, Taggable, TaggableTag, ExtraData, Company, Person, Dog, DogHouse, Bone, Product, Address, Job, Payment, Forum
+from testcases import TestCaseWithFixture
 
 
-class M2MResourcesTestCase(TestCase):
+class M2MResourcesTestCase(TestCaseWithFixture):
     def test_same_object_added(self):
         """
         From Issue #1035
@@ -42,7 +42,7 @@ class M2MResourcesTestCase(TestCase):
         self.assertEqual(len(data['members']), 1)
 
 
-class RelatedResourceTest(TestCase):
+class RelatedResourceTest(TestCaseWithFixture):
     urls = 'related_resource.api.urls'
 
     def setUp(self):
@@ -82,7 +82,7 @@ class RelatedResourceTest(TestCase):
         self.assertEqual(User.objects.get(id=self.user.id).username, 'foobar')
 
 
-class CategoryResourceTest(TestCase):
+class CategoryResourceTest(TestCaseWithFixture):
     urls = 'related_resource.api.urls'
 
     def setUp(self):
@@ -129,7 +129,7 @@ class CategoryResourceTest(TestCase):
         self.assertEqual(Category.objects.get(pk=self.child_cat_1.pk).parent, None)
 
 
-class ExplicitM2MResourceRegressionTest(TestCase):
+class ExplicitM2MResourceRegressionTest(TestCaseWithFixture):
     urls = 'related_resource.api.urls'
 
     def setUp(self):
@@ -142,7 +142,6 @@ class ExplicitM2MResourceRegressionTest(TestCase):
 
         # Give each tag some extra data (the lookup of this data is what makes the test fail)
         self.extradata_1 = ExtraData.objects.create(tag=self.tag_1, name='additional')
-
 
     def test_correct_setup(self):
         request = MockRequest()
@@ -173,7 +172,6 @@ class ExplicitM2MResourceRegressionTest(TestCase):
         # and check whether the extradata is present
         self.assertEqual(data['extradata']['name'], u'additional')
 
-
     def test_post_new_tag(self):
         resource = api.canonical_resource_for('tag')
         request = MockRequest()
@@ -197,7 +195,7 @@ class ExplicitM2MResourceRegressionTest(TestCase):
         self.assertEqual(deserialized['name'], 'school')
 
 
-class OneToManySetupTestCase(TestCase):
+class OneToManySetupTestCase(TestCaseWithFixture):
     urls = 'related_resource.api.urls'
 
     def test_one_to_many(self):
@@ -235,11 +233,12 @@ class OneToManySetupTestCase(TestCase):
 class FullCategoryResource(CategoryResource):
     parent = fields.ToOneField('self', 'parent', null=True, full=True)
 
-class RelationshipOppositeFromModelTestCase(TestCase):
-    '''
+
+class RelationshipOppositeFromModelTestCase(TestCaseWithFixture):
+    """
         On the model, the Job relationship is defined on the Payment.
         On the resource, the PaymentResource is defined on the JobResource as well
-    '''
+    """
     def setUp(self):
         super(RelationshipOppositeFromModelTestCase, self).setUp()
 
@@ -278,13 +277,12 @@ class RelationshipOppositeFromModelTestCase(TestCase):
         self.assertEqual(new_job, new_payment.job)
 
 
-
-class RelatedPatchTestCase(TestCase):
+class RelatedPatchTestCase(TestCaseWithFixture):
     urls = 'related_resource.api.urls'
 
     def setUp(self):
         super(RelatedPatchTestCase, self).setUp()
-        #this test doesn't use MockRequest, so the body attribute is different.
+        # this test doesn't use MockRequest, so the body attribute is different.
         if django.VERSION >= (1, 4):
             self.body_attr = "_body"
         else:
@@ -313,7 +311,7 @@ class RelatedPatchTestCase(TestCase):
         self.assertEqual(cat2.name, 'Kid')
 
 
-class NestedRelatedResourceTest(TestCase):
+class NestedRelatedResourceTest(TestCaseWithFixture):
     urls = 'related_resource.api.urls'
 
     def test_one_to_one(self):
@@ -346,7 +344,10 @@ class NestedRelatedResourceTest(TestCase):
         pk = Person.objects.all()[0].pk
         request = MockRequest()
         request.method = 'GET'
-        request.path = reverse('api_dispatch_detail', kwargs={'pk': pk, 'resource_name': pr._meta.resource_name, 'api_name': pr._meta.api_name})
+        request.path = reverse('api_dispatch_detail',
+                               kwargs={'pk': pk,
+                                       'resource_name': pr._meta.resource_name,
+                                       'api_name': pr._meta.api_name})
         resp = pr.get_detail(request, pk=pk)
         self.assertEqual(resp.status_code, 200)
 
@@ -362,7 +363,10 @@ class NestedRelatedResourceTest(TestCase):
         request = MockRequest()
         request.GET = {'format': 'json'}
         request.method = 'PUT'
-        request.path = reverse('api_dispatch_detail', kwargs={'pk': pk, 'resource_name': pr._meta.resource_name, 'api_name': pr._meta.api_name})
+        request.path = reverse('api_dispatch_detail', 
+                               kwargs={'pk': pk, 
+                                       'resource_name': pr._meta.resource_name, 
+                                       'api_name': pr._meta.api_name})
         request.set_body(resp.content.decode('utf-8'))
         resp = pr.put_detail(request, pk=pk)
         self.assertEqual(resp.status_code, 204)
@@ -540,7 +544,7 @@ class NestedRelatedResourceTest(TestCase):
         resp = pr.put_detail(request, pk=pk)
         self.assertEqual(resp.status_code, 204)
 
-        #Change just a nested resource via PUT
+        # Change just a nested resource via PUT
         request = MockRequest()
         request.GET = {'format': 'json'}
         request.method = 'PUT'
@@ -556,7 +560,7 @@ class NestedRelatedResourceTest(TestCase):
         self.assertEqual(bone.color, 'gray')
 
 
-class RelatedSaveCallsTest(TestCase):
+class RelatedSaveCallsTest(TestCaseWithFixture):
     urls = 'related_resource.api.urls'
 
     def test_one_query_for_post_list(self):
@@ -575,7 +579,6 @@ class RelatedSaveCallsTest(TestCase):
 
         with self.assertNumQueries(1):
             resp = resource.post_list(request)
-
 
     def test_two_queries_for_post_list(self):
         """
@@ -619,8 +622,7 @@ class RelatedSaveCallsTest(TestCase):
 
         request.set_body(body)
 
-        resource.post_list(request) #_save_fails_test will explode if Label is saved
-
+        resource.post_list(request)  #_save_fails_test will explode if Label is saved
 
     def test_save_m2m_changed(self):
         """
@@ -641,7 +643,7 @@ class RelatedSaveCallsTest(TestCase):
         resp = resource.wrap_view('dispatch_list')(request)
         self.assertEqual(resp.status_code, 201)
 
-        #'extra' should have been set
+        # 'extra' should have been set
         tag = Tag.objects.all()[0]
         taggable_tag = tag.taggabletags.all()[0]
         self.assertEqual(taggable_tag.extra, 7)
@@ -656,7 +658,7 @@ class RelatedSaveCallsTest(TestCase):
 
         resource.put_detail(request)
 
-        #'extra' should have changed
+        # 'extra' should have changed
         tag = Tag.objects.all()[0]
         taggable_tag = tag.taggabletags.all()[0]
         self.assertEqual(taggable_tag.extra, 1234)
@@ -704,7 +706,7 @@ class RelatedSaveCallsTest(TestCase):
         self.assertEqual(dog_bones[1], bone2)
 
 
-class CorrectUriRelationsTestCase(TestCase):
+class CorrectUriRelationsTestCase(TestCaseWithFixture):
     """
     Validate that incorrect URI (with PKs that line up to valid data) are not
     accepted.
@@ -717,7 +719,7 @@ class CorrectUriRelationsTestCase(TestCase):
 
         # For this test, we need a ``User`` with the same PK as a ``Note``.
         note_1 = Note.objects.latest('created')
-        user_2 = User.objects.create(
+        User.objects.create(
             id=note_1.pk,
             username='valid',
             email='valid@exmaple.com',
@@ -746,3 +748,45 @@ class CorrectUriRelationsTestCase(TestCase):
 
         self.assertEqual(str(cm.exception), "An incorrect URL was provided '/v1/notes/2/' for the 'UserResource' resource.")
         self.assertEqual(Note.objects.count(), 2)
+
+
+class TestPutOnRelatedResource(TestCase):
+    def test_m2m_put_prefetch(self):
+        resource = api.canonical_resource_for('forum')
+        request = MockRequest()
+        request.GET = {'format': 'json'}
+        request.method = 'PUT'
+        forum = Forum.objects.create()
+        user_data_1 = {
+            'username': 'valid but unique',
+            'email': 'valid.unique@exmaple.com',
+            'password': 'junk',
+            }
+        user_data_2 = {
+            'username': 'valid and very unique',
+            'email': 'valid.very.unique@exmaple.com',
+            'password': 'junk',
+            }
+        user_data_3 = {
+            'username': 'valid again',
+            'email': 'valid.very.unique@exmaple.com',
+            'password': 'junk',
+            }
+
+        forum_data = {'members': [user_data_1, user_data_2, ],
+                      'moderators': [user_data_3, ]}
+        request.set_body(json.dumps(forum_data))
+
+        request.path = reverse('api_dispatch_detail', kwargs={'pk': forum.pk,
+                                                              'resource_name': resource._meta.resource_name,
+                                                              'api_name': resource._meta.api_name})
+
+        response = resource.put_detail(request)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.content.decode('utf-8'))
+
+        # Check that the query does what it's supposed to and only the return value is wrong
+        self.assertEqual(User.objects.count(), 3)
+
+        self.assertEqual(len(data['members']), 2)
+        self.assertEqual(len(data['moderators']), 1)

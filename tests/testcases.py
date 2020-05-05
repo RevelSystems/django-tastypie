@@ -5,7 +5,8 @@ from django.core.handlers.wsgi import WSGIHandler
 from django.core.management import call_command
 from django.core.servers import basehttp
 from django.db import connections
-from django.test.testcases import TransactionTestCase
+from django.test.testcases import TransactionTestCase, TestCase
+
 
 class StoppableWSGIServer(basehttp.WSGIServer):
     """WSGIServer with short timeout, so that server thread can stop this server."""
@@ -23,6 +24,7 @@ class StoppableWSGIServer(basehttp.WSGIServer):
             return (sock, address)
         except socket.timeout:
             raise
+
 
 class TestServerThread(threading.Thread):
     """Thread for running a http server while tests are running."""
@@ -65,7 +67,7 @@ class TestServerThread(threading.Thread):
                 row = cursor.fetchone()
             
             call_command('syncdb', interactive=False, verbosity=0)
-            
+
             # Import the fixture data into the test database.
             if hasattr(self, 'fixtures'):
                 # We have to use this slightly awkward syntax due to the fact
@@ -83,9 +85,12 @@ class TestServerThread(threading.Thread):
 
 
 class TestServerTestCase(TransactionTestCase):
+    fixtures = ['test_data.json']
+
     def start_test_server(self, address='localhost', port=8000):
         """Creates a live test server object (instance of WSGIServer)."""
         self.server_thread = TestServerThread(address, port)
+        self.server_thread.fixtures = self.fixtures
         self.server_thread.start()
         self.server_thread.started.wait()
         if self.server_thread.error:
@@ -94,3 +99,7 @@ class TestServerTestCase(TransactionTestCase):
     def stop_test_server(self):
         if self.server_thread:
             self.server_thread.join()
+
+
+class TestCaseWithFixture(TestCase):
+    fixtures = ['test_data.json']
