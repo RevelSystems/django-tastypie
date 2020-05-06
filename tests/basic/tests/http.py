@@ -17,6 +17,7 @@ def header_name(name):
     else:
         return name.lower()
 
+
 @override_settings(DEBUG=True)
 class HTTPTestCase(TestServerTestCase):
     def setUp(self):
@@ -35,14 +36,14 @@ class HTTPTestCase(TestServerTestCase):
         connection.close()
         data = response.read().decode('utf-8')
         self.assertEqual(response.status, 200)
-        self.assertEqual(data, '{"cached_users": {"list_endpoint": "/api/v1/cached_users/", "schema": "/api/v1/cached_users/schema/"}, "notes": {"list_endpoint": "/api/v1/notes/", "schema": "/api/v1/notes/schema/"}, "private_cached_users": {"list_endpoint": "/api/v1/private_cached_users/", "schema": "/api/v1/private_cached_users/schema/"}, "public_cached_users": {"list_endpoint": "/api/v1/public_cached_users/", "schema": "/api/v1/public_cached_users/schema/"}, "users": {"list_endpoint": "/api/v1/users/", "schema": "/api/v1/users/schema/"}}')
+        self.assertEqual(data, '{"cache_disabled_users": {"list_endpoint": "/api/v1/cache_disabled_users/", "schema": "/api/v1/cache_disabled_users/schema/"}, "cached_users": {"list_endpoint": "/api/v1/cached_users/", "schema": "/api/v1/cached_users/schema/"}, "notes": {"list_endpoint": "/api/v1/notes/", "schema": "/api/v1/notes/schema/"}, "private_cached_users": {"list_endpoint": "/api/v1/private_cached_users/", "schema": "/api/v1/private_cached_users/schema/"}, "public_cached_users": {"list_endpoint": "/api/v1/public_cached_users/", "schema": "/api/v1/public_cached_users/schema/"}, "users": {"list_endpoint": "/api/v1/users/", "schema": "/api/v1/users/schema/"}}')
 
     def test_get_apis_invalid_accept(self):
         connection = self.get_connection()
         connection.request('GET', '/api/v1/', headers={'Accept': 'invalid'})
         response = connection.getresponse()
         connection.close()
-        data = response.read().decode('utf-8')
+        response.read().decode('utf-8')
         self.assertEqual(response.status, 400, "Invalid HTTP Accept headers should return HTTP 400")
 
     def test_get_resource_invalid_accept(self):
@@ -53,7 +54,7 @@ class HTTPTestCase(TestServerTestCase):
         connection.request('GET', '/api/v1/notes/', headers={'Accept': 'invalid'})
         response = connection.getresponse()
         connection.close()
-        data = response.read().decode('utf-8')
+        response.read().decode('utf-8')
         self.assertEqual(response.status, 400, "Invalid HTTP Accept headers should return HTTP 400")
 
     def test_get_apis_xml(self):
@@ -63,7 +64,7 @@ class HTTPTestCase(TestServerTestCase):
         connection.close()
         data = response.read().decode('utf-8')
         self.assertEqual(response.status, 200)
-        self.assertEqual(data, '<?xml version=\'1.0\' encoding=\'utf-8\'?>\n<response><cached_users type="hash"><list_endpoint>/api/v1/cached_users/</list_endpoint><schema>/api/v1/cached_users/schema/</schema></cached_users><notes type="hash"><list_endpoint>/api/v1/notes/</list_endpoint><schema>/api/v1/notes/schema/</schema></notes><private_cached_users type="hash"><list_endpoint>/api/v1/private_cached_users/</list_endpoint><schema>/api/v1/private_cached_users/schema/</schema></private_cached_users><public_cached_users type="hash"><list_endpoint>/api/v1/public_cached_users/</list_endpoint><schema>/api/v1/public_cached_users/schema/</schema></public_cached_users><users type="hash"><list_endpoint>/api/v1/users/</list_endpoint><schema>/api/v1/users/schema/</schema></users></response>')
+        self.assertEqual(data, '<?xml version=\'1.0\' encoding=\'utf-8\'?>\n<response><cache_disabled_users type="hash"><list_endpoint>/api/v1/cache_disabled_users/</list_endpoint><schema>/api/v1/cache_disabled_users/schema/</schema></cache_disabled_users><cached_users type="hash"><list_endpoint>/api/v1/cached_users/</list_endpoint><schema>/api/v1/cached_users/schema/</schema></cached_users><notes type="hash"><list_endpoint>/api/v1/notes/</list_endpoint><schema>/api/v1/notes/schema/</schema></notes><private_cached_users type="hash"><list_endpoint>/api/v1/private_cached_users/</list_endpoint><schema>/api/v1/private_cached_users/schema/</schema></private_cached_users><public_cached_users type="hash"><list_endpoint>/api/v1/public_cached_users/</list_endpoint><schema>/api/v1/public_cached_users/schema/</schema></public_cached_users><users type="hash"><list_endpoint>/api/v1/users/</list_endpoint><schema>/api/v1/users/schema/</schema></users></response>')
 
     def test_get_list(self):
         connection = self.get_connection()
@@ -79,7 +80,8 @@ class HTTPTestCase(TestServerTestCase):
         connection.request('POST', '/api/v1/notes/', body=post_data, headers={'Accept': 'application/json', 'Content-type': 'application/json'})
         response = connection.getresponse()
         self.assertEqual(response.status, 201)
-        self.assertEqual(dict(response.getheaders())[header_name('Location')], 'http://localhost:8001/api/v1/notes/3/')
+        location = dict(response.getheaders())[header_name('Location')]
+        self.assertTrue(location.endswith('/api/v1/notes/3/'))
 
         # make sure posted object exists
         connection.request('GET', '/api/v1/notes/3/', headers={'Accept': 'application/json'})
@@ -122,6 +124,19 @@ class HTTPTestCase(TestServerTestCase):
         cache_control = set([x.strip().lower() for x in headers[header_name("Cache-Control")].split(",") if x.strip()])
 
         self.assertEqual(cache_control, set(["s-maxage=3600", "max-age=3600"]))
+        self.assertTrue('"johndoe"' in response.read().decode('utf-8'))
+
+    def test_cache_disabled_control(self):
+        connection = self.get_connection()
+        connection.request('GET', '/api/v1/cache_disabled_users/', headers={'Accept': 'application/json'})
+        response = connection.getresponse()
+        connection.close()
+        self.assertEqual(response.status, 200)
+
+        headers = dict(response.getheaders())
+        cache_control = set([x.strip().lower() for x in headers[header_name("Cache-Control")].split(",") if x.strip()])
+
+        self.assertEqual(cache_control, set(["s-maxage=0", "max-age=0"]))
         self.assertTrue('"johndoe"' in response.read().decode('utf-8'))
 
     def test_public_cache_control(self):

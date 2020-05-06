@@ -1,6 +1,7 @@
 import socket
 import threading
 
+import django
 from django.core.handlers.wsgi import WSGIHandler
 from django.core.management import call_command
 from django.core.servers import basehttp
@@ -45,28 +46,32 @@ class TestServerThread(threading.Thread):
             httpd = StoppableWSGIServer(server_address, basehttp.WSGIRequestHandler)
             httpd.set_app(handler)
             self.started.set()
-        except basehttp.WSGIServerException as e:
+        except socket.error as e:
             self.error = e
             self.started.set()
             return
 
         # Must do database stuff in this new thread if database in memory.
         from django.conf import settings
-        
+
         db = settings.DATABASES['default']
-        
+
         ENGINE = db['ENGINE']
         TEST_NAME = db.get('TEST_NAME')
-        
-        if ('sqlite3' in ENGINE or 'spatialite' in ENGINE) \
-            and (not TEST_NAME or TEST_NAME == ':memory:'):
+
+        if ('sqlite3' in ENGINE or 'spatialite' in ENGINE) and\
+                (not TEST_NAME or TEST_NAME == ':memory:'):
             if 'spatialite' in ENGINE:
                 cursor = connections['default'].cursor()
-                
+
                 cursor.execute('SELECT InitSpatialMetaData()')
-                row = cursor.fetchone()
-            
-            call_command('syncdb', interactive=False, verbosity=0)
+                cursor.fetchone()
+
+            if django.VERSION >= (1, 9):
+                call_command('migrate', run_syncdb=True, interactive=False, verbosity=0)
+            else:
+                call_command('syncdb', interactive=False, verbosity=0)
+                call_command('migrate', interactive=False, verbosity=0)
 
             # Import the fixture data into the test database.
             if hasattr(self, 'fixtures'):

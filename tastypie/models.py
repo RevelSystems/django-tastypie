@@ -1,16 +1,15 @@
 from __future__ import unicode_literals
+
+from hashlib import sha1
 import hmac
 import time
+
 from django.conf import settings
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
+
 from tastypie.utils import now
 
-try:
-    from hashlib import sha1
-except ImportError:
-    import sha
-    sha1 = sha.sha
 
 @python_2_unicode_compatible
 class ApiAccess(models.Model):
@@ -30,15 +29,10 @@ class ApiAccess(models.Model):
 
 if 'django.contrib.auth' in settings.INSTALLED_APPS:
     import uuid
-    try:
-        from django.core.exceptions import AppRegistryNotReady
-        from tastypie.compat import AUTH_USER_MODEL as user_model_reference
-    except ImportError:  # No app registry ready functionality (probably Django < 1.7), import the actual model as it had been done previously
-        from tastypie.compat import AUTH_USER_MODEL as user_model_reference
-    except AppRegistryNotReady:  # Django 1.7+, the app is not ready yet, so instead use the string listed in settings as a model reference
-        user_model_reference = settings.AUTH_USER_MODEL
+    from tastypie.compat import AUTH_USER_MODEL
+
     class ApiKey(models.Model):
-        user = models.OneToOneField(user_model_reference, related_name='api_key')
+        user = models.OneToOneField(AUTH_USER_MODEL, related_name='api_key')
         key = models.CharField(max_length=128, blank=True, default='', db_index=True)
         created = models.DateTimeField(default=now)
 
@@ -60,10 +54,9 @@ if 'django.contrib.auth' in settings.INSTALLED_APPS:
         class Meta:
             abstract = getattr(settings, 'TASTYPIE_ABSTRACT_APIKEY', False)
 
-
-    def create_api_key(sender, **kwargs):
+    def create_api_key(sender, instance, created, **kwargs):
         """
         A signal for hooking up automatic ``ApiKey`` creation.
         """
-        if kwargs.get('created') is True:
-            ApiKey.objects.create(user=kwargs.get('instance'))
+        if kwargs.get('raw', False) is False and created is True:
+            ApiKey.objects.create(user=instance)

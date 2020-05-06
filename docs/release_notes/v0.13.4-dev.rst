@@ -1,0 +1,10 @@
+v0.13.4-dev
+===========
+
+:date: 2020-05-06
+
+Fork is upgraded to v0.13.3 from mainstream.
+
+Custom fixes, that are still included:
+ * Deepcopy performance issue fix: https://github.com/RevelSystems/django-tastypie/commit/ece89b244950608723207dd48837a1547dd45cd2
+ * Port of fix for `skip_errors=True` in related fields: https://github.com/RevelSystems/django-tastypie/pull/8

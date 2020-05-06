@@ -17,6 +17,7 @@ def header_name(name):
     else:
         return name.lower()
 
+
 @override_settings(DEBUG=True)
 class HTTPTestCase(TestServerTestCase):
     def setUp(self):
@@ -113,10 +114,10 @@ class HTTPTestCase(TestServerTestCase):
                 }
             ]
         }
-        self.maxDiff = None
+
         resp = json.loads(data)
 
-        #testing separately to help locate issues
+        # testing separately to help locate issues
         self.assertEqual(resp['meta'], expected['meta'])
         self.assertEqual(resp['objects'], expected['objects'])
 
@@ -127,7 +128,8 @@ class HTTPTestCase(TestServerTestCase):
         response = connection.getresponse()
         data = response.read().decode('utf-8')
         self.assertEqual(response.status, 201, data)
-        self.assertEqual(dict(response.getheaders())[header_name('Location')], 'http://localhost:8001/api/v1/products/A76124/03/')
+        location = dict(response.getheaders())[header_name('Location')]
+        self.assertTrue(location.endswith('/api/v1/products/A76124/03/'))
 
         # make sure posted object exists
         connection.request('GET', '/api/v1/products/A76124/03/', headers={'Accept': 'application/json'})

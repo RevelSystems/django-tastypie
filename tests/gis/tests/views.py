@@ -1,9 +1,11 @@
-from django.http import HttpRequest
-from django.test import TestCase
 import json
 
+from django.http import HttpRequest
 
-class ViewsTestCase(TestCase):
+from testcases import TestCaseWithFixture
+
+
+class ViewsTestCase(TestCaseWithFixture):
     def test_gets(self):
         resp = self.client.get('/api/v1/', data={'format': 'json'})
         self.assertEqual(resp.status_code, 200)
@@ -39,7 +41,7 @@ class ViewsTestCase(TestCase):
 
         resp = self.client.post('/api/v1/geonotes/', data=post_data, content_type='application/json')
         self.assertEqual(resp.status_code, 201)
-        self.assertEqual(resp['location'], 'http://testserver/api/v1/geonotes/4/')
+        self.assertTrue(resp['location'].endswith('/api/v1/geonotes/4/'))
 
         # make sure posted object exists
         resp = self.client.get('/api/v1/geonotes/4/', data={'format': 'json'})
@@ -74,7 +76,7 @@ class ViewsTestCase(TestCase):
 
         resp = self.client.post('/api/v1/geonotes/', data=post_data, content_type='application/json')
         self.assertEqual(resp.status_code, 400)
-        self.assertEqual(resp.content.decode('utf-8'), '{"error": "Could not find the provided object via resource URI \'/api/v1/users/9001/\'."}')
+        self.assertEqual(resp.content.decode('utf-8'), '{"error": "Could not find the provided users object via resource URI \'/api/v1/users/9001/\'."}')
 
     def test_options(self):
         resp = self.client.options('/api/v1/geonotes/')

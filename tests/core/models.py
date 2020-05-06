@@ -1,6 +1,9 @@
-import datetime
+from itertools import count
+import uuid
+
 from django.contrib.auth.models import User
 from django.db import models
+
 from tastypie.utils import now, aware_datetime
 
 
@@ -12,7 +15,7 @@ class DateRecord(models.Model):
 
 class Note(models.Model):
     author = models.ForeignKey(User, related_name='notes', blank=True, null=True)
-    title = models.CharField(max_length=100)
+    title = models.CharField("The Title", max_length=100)
     slug = models.SlugField()
     content = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
@@ -36,8 +39,10 @@ class Note(models.Model):
     def my_property(self):
         return 'my_property'
 
+
 class NoteWithEditor(Note):
     editor = models.ForeignKey(User, related_name='notes_edited')
+
 
 class Subject(models.Model):
     notes = models.ManyToManyField(Note, related_name='subjects')
@@ -79,3 +84,28 @@ class Counter(models.Model):
     def __unicode__(self):
         return self.name
 
+
+int_source = count(1)
+
+
+class MyDefaultPKModel(models.Model):
+    id = models.IntegerField(primary_key=True, default=lambda: next(int_source), editable=False)
+    content = models.TextField(blank=True, default='')
+
+
+if hasattr(models, 'UUIDField'):
+    class MyUUIDModel(models.Model):
+        id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+        anotheruuid = models.UUIDField(default=uuid.uuid4)
+        content = models.TextField(blank=True, default='')
+        order = models.IntegerField(default=0, blank=True)
+
+        class Meta:
+            ordering = ('order',)
+
+    class MyRelatedUUIDModel(models.Model):
+        myuuidmodels = models.ManyToManyField(MyUUIDModel)
+        content = models.TextField(blank=True, default='')
+else:
+    MyUUIDModel = None
+    MyRelatedUUIDModel = None
